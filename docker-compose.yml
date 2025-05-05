@@ -1,0 +1,54 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  notification-api:
+    build:
+      context: .
+      dockerfile: Notification.API/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+    depends_on:
+      - rabbitmq
+    restart: on-failure
+
+  email-processor:
+    build:
+      context: .
+      dockerfile: EmailProcessor/Dockerfile
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+    depends_on:
+      - rabbitmq
+      - notification-api
+    restart: on-failure
+
+  push-processor:
+    build:
+      context: .
+      dockerfile: PushProcessor/Dockerfile
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+    depends_on:
+      - rabbitmq
+      - notification-api
+    restart: on-failure
+
+volumes:
+  rabbitmq_data:

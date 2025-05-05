@@ -1,6 +1,6 @@
-﻿using Notification.Api.Database;
+﻿namespace Notification.Api.Models;
 
-namespace Notification.Api.Models;
+using Notification.Api.Database;
 
 public class NotificationDto
 {
@@ -23,4 +23,19 @@ public class NotificationDto
     public string Status { get; set; } = string.Empty;
 
     // Map from entity
-    public static NotificationDto FromEntity(
+    public static NotificationDto FromEntity(NotificationEntity entity)
+    {
+        return new NotificationDto
+        {
+            Id = entity.Id,
+            Recipient = entity.Recipient,
+            Content = entity.Content,
+            SendEmail = entity.SendEmail,
+            SendPush = entity.SendPush,
+            TimeZone = entity.TimeZone,
+            ScheduledTimeUtc = entity.ScheduledTimeUtc,
+            CreatedAtUtc = entity.CreatedAtUtc,
+            Status = entity.Status.ToString()
+        };
+    }
+}

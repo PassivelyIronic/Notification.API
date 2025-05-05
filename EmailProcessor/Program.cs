@@ -2,35 +2,30 @@ using EmailProcessor;
 using MassTransit;
 using Notification.Api.Messages;
 
-var builder = Host.CreateApplicationBuilder(args);
-
-// Dodaj MassTransit
-builder.Services.AddMassTransit(config =>
-{
-    // Zarejestruj konsumenta
-    config.AddConsumer<SendEmailHandler>();
-
-    // Skonfiguruj RabbitMQ
-    config.UsingRabbitMq((context, cfg) =>
+IHost host = Host.CreateDefaultBuilder(args)
+    .ConfigureServices(services =>
     {
-        cfg.Host("rabbitmq", "/", h =>
+        services.AddMassTransit(x =>
         {
-            h.Username("guest");
-            h.Password("guest");
+            // Register message consumers
+            x.AddConsumer<SendEmailHandler>();
+
+            // Configure RabbitMQ
+            x.UsingRabbitMq((context, cfg) =>
+            {
+                cfg.Host("rabbitmq", "/", h =>
+                {
+                    h.Username("guest");
+                    h.Password("guest");
+                });
+
+                // Configure endpoints
+                cfg.ConfigureEndpoints(context);
+            });
         });
 
-        // Skonfiguruj endpoint
-        cfg.ReceiveEndpoint("email-processor", e =>
-        {
-            e.ConfigureConsumer<SendEmailHandler>(context);
+        services.AddHostedService<Worker>();
+    })
+    .Build();
 
-            // Upewnij siê, ¿e tylko jeden komunikat jest przetwarzany jednoczeœnie
-            e.PrefetchCount = 1;
-        });
-    });
-});
-
-builder.Services.AddHostedService<Worker>();
-
-var host = builder.Build();
 host.Run();

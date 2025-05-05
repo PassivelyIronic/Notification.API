@@ -146,12 +146,15 @@ public class NotificationSaga : MassTransitStateMachine<NotificationSagaData>
                     // If we haven't exceeded max retries, try again
                     if (context.Saga.EmailRetryCount < 3)
                     {
-                        // Add a small delay before retry
-                        context.Publish(TimeSpan.FromSeconds(5), new SendEmailNotification(
+                        // Use the proper method for delayed publishing
+                        var message = new SendEmailNotification(
                             context.Saga.NotificationId,
                             context.Saga.Recipient,
                             context.Saga.Content,
-                            context.Saga.EmailRetryCount));
+                            context.Saga.EmailRetryCount);
+
+                        // Use SchedulePublish instead of direct Publish with TimeSpan
+                        context.SchedulePublish(TimeSpan.FromSeconds(5), message);
                     }
                     else
                     {
@@ -220,12 +223,15 @@ public class NotificationSaga : MassTransitStateMachine<NotificationSagaData>
                     // If we haven't exceeded max retries, try again
                     if (context.Saga.PushRetryCount < 3)
                     {
-                        // Add a small delay before retry
-                        context.Publish(TimeSpan.FromSeconds(5), new SendPushNotification(
+                        // Use the proper method for delayed publishing
+                        var message = new SendPushNotification(
                             context.Saga.NotificationId,
                             context.Saga.Recipient,
                             context.Saga.Content,
-                            context.Saga.PushRetryCount));
+                            context.Saga.PushRetryCount);
+
+                        // Use SchedulePublish instead of direct Publish with TimeSpan
+                        context.SchedulePublish(TimeSpan.FromSeconds(5), message);
                     }
                     else
                     {
